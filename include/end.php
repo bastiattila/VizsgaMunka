@@ -1,6 +1,7 @@
 					<!-- END: MAIN CONTENT -->
 				
 				</main>
+				
 				<aside>
 <?php
 date_default_timezone_set("Europe/Budapest");
@@ -31,6 +32,17 @@ echo '<section>
 	</section>';
 					
 ?>
+					
+					
+	<style>
+		footer ul
+		{
+			color: black;
+		}
+	</style>
+					
+					
+					
 					<section>
 						<h3>Aktuális ajánlatunk</h3>
 						<p>
@@ -71,6 +83,7 @@ echo '<section>
 				</div>
 			</div>
 		</footer>
+		
 		
 
 	</body>

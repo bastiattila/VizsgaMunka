@@ -2,52 +2,51 @@
 include "include/begin.php";
 include "include/database.php";
 
-if (isset($_POST["sendEmail"])) {
-    $title = trim($_POST["title"]);
-    $race = trim($_POST["race"]);
-    $raiser = $_POST["raiser"];
-    $vintage = trim($_POST["vintage"]);
-    $price = trim($_POST["price"]);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $title = $_POST['title'];
+    $race = $_POST['race'];
+    $raiser = $_POST['raiser'];
+    $vintage = $_POST['vintage'];
+    $price = $_POST['price'];
 
-    $error = null;
-
-    if (empty($title) || empty($race) || empty($raiser) || empty($vintage) || empty($price)) {
-        $error = "Minden mező kitöltése kötelező";
-    }
-
-    if ($error) {
-        echo '<p class="error">' . $error . '</p>';
+    // Ellenőrizzük, hogy a kötelező mezők üresek-e
+    if (empty($title) || empty($race) || empty($raiser) || empty($vintage) || empty($price) || !is_string($title) || !is_string($race) || !is_numeric($price)) {
+        echo '<div class="alert alert-danger alert-dismissible fade show" role="alert">>Kérlek, töltsd ki az összes mezőt helyesen.<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button></div>';
     } else {
         try {
-            // Adatbázis kapcsolat felépítése
-            $dsn = "mysql:host=localhost;dbname=vizsga;charset=utf8mb4";
-            $username = "root";
-            $password = "mysql";
+            $dbName = "vizsga";
+            $dbUser = "root";
+            $dbPass = "mysql";
+            $dsn = "mysql:host=localhost;dbname=". $dbName .";charset=utf8mb4";
+            $db = new PDO($dsn, $dbUser, $dbPass);
 
-            $db = new PDO($dsn, $username, $password);
-            $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-            // Beszúrás végrehajtása
-            $sql = "INSERT INTO add (title, race, raiser, vintage, price) VALUES (:title, :race, :raiser, :vintage, :price)";
+            $sql = "INSERT INTO kinalat (title, race, raiser, vintage, price) VALUES (?, ?, ?, ?, ?)";
             $stmt = $db->prepare($sql);
-            $stmt->bindParam(":title", $title);
-            $stmt->bindParam(":race", $race);
-            $stmt->bindParam(":raiser", $raiser);
-            $stmt->bindParam(":vintage", $vintage);
-            $stmt->bindParam(":price", $price);
-            $stmt->execute();
+            $stmt->execute([$title, $race, $raiser, $vintage, $price]);
 
-            echo '<p class="success">Bejegyzésed tároltuk! Köszönjük!</p>';
-
-            $db = null; // Adatbázis kapcsolat bezárása
+           echo '<div class="alert alert-success alert-dismissible fade show" role="alert">
+        A termék sikeresen hozzá lett adva a kínálathoz.
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>';
         } catch (PDOException $e) {
-            echo '<p class="error">Hiba történt az adatbáziskapcsolat során: ' . $e->getMessage() . '</p>';
+            echo '<div class="alert alert-danger alert-dismissible fade show" role="alert">
+        HIBA: Nem sikerült végrehajtani a mentési parancsot: ' . $e->getMessage() . '
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>';
         }
     }
 }
+
 ?>
 
-<form method="post" action="services.php">
+
+<form method="post" action="add.php">
   <div>
     <label for="inputTitle">A bor neve</label>
     <input type="text" name="title" id="inputTitle" maxlength="50">
@@ -59,11 +58,13 @@ if (isset($_POST["sendEmail"])) {
   <div>
     <label for="inputRaiser">Termelő</label>
     <select name="raiser" id="inputRaiser" >
-      <option value="3">Nyakas</option>
-      <option value="2">Boch</option>
-      <option value="1">St. Andrea</option>
-      <option value="0">Tokaji</option>
+      <option value="Nyakas">Nyakas</option>
+      <option value="Boch">Boch</option>
+      <option value="St. Andrea">St. Andrea</option>
+      <option value="Tokaji">Tokaji</option>
     </select>
+  </div>
+  <div>
     <label for="inputVintage">Évjárat</label>
     <select onchange="alert('Kiválasztott évszám: ' + this.value)" id="inputVintage" name="vintage">
       <option value="">Válassz egy évszámot</option>
@@ -84,3 +85,22 @@ if (isset($_POST["sendEmail"])) {
     <button name="sendEmail" type="submit">Küldés</button>
   </div>
 </form>
+
+<?php include "include/end.php"; ?>
+
+
+<script>
+    // Az üzenet eltűntetése a bezárás gombra kattintva
+    document.addEventListener("DOMContentLoaded", function() {
+        var alertCloseButtons = document.querySelectorAll(".alert button.close");
+        alertCloseButtons.forEach(function(button) {
+            button.addEventListener("click", function() {
+                var alert = button.closest(".alert");
+                alert.classList.remove("show");
+                alert.addEventListener("transitionend", function() {
+                    alert.style.display = "none";
+                }, {once: true});
+            });
+        });
+    });
+</script>
